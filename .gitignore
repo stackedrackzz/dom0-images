@@ -1,0 +1,5 @@
+*.rpm
+artifacts/*
+cache/*
+!artifacts/.gitkeep
+!cache/.gitkeep

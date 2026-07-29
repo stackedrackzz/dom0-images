@@ -1,0 +1,72 @@
+# qubes-builderv2 configuration.
+#
+# RECONSTRUCTED FROM TRAINING KNOWLEDGE, NOT VERIFIED against a live
+# checkout of https://github.com/QubesOS/qubes-builderv2 -- this
+# session has no internet access to fetch its current
+# example-configs/ or confirm the schema hasn't drifted since this
+# was written. In particular: earlier drafts of this file used a
+# leading-colon key style (":git:", ":components:", ...) copied from
+# memory of the OLD Ruby-based v1 builder's config -- qubes-builderv2
+# is a Python rewrite and uses plain YAML keys (no leading colon),
+# which is what's below, but the key *names* and structure themselves
+# are still an unverified reconstruction. Diff this against
+# qubes-builderv2's own example-configs/ for the release you're
+# targeting before relying on it.
+#
+# components/templates are intentionally minimal placeholders -- the
+# actual guest VM templates/components to build are being specified
+# separately; extend the lists below rather than restructuring the
+# file when they arrive.
+
+git:
+  baseurl: https://github.com
+  prefix: QubesOS/qubes-
+  branch: release4.2
+  maintainers: []
+
+backend-vmm: xen
+
+debug: true
+verbose: true
+
+gpg-client: gpg
+
+# No signing key configured yet -- unsigned/local-only builds until
+# one is provided. Do not point this at a real key without also
+# reviewing where build artifacts end up (see artifacts-dir below).
+sign-key: {}
+
+iso:
+  kickstart: conf/iso-online-testing.ks
+
+cache-dir: /builder/cache
+artifacts-dir: /builder/artifacts
+
+# Per-component build isolation runs in podman containers, not
+# directly on this container's own filesystem -- see
+# build-container/Containerfile for the outer container that runs `qb`
+# itself, which in turn drives these per-component podman builds
+# (nested podman; the outer container's podman socket is what
+# qubes-builderv2 talks to, see podman-compose.yml's socket mount).
+executor:
+  type: podman
+  options:
+    image: "qubes-builder-fedora:latest"
+
+# Placeholder -- replace/extend once the target Qubes release and
+# guest templates are specified.
+distributions:
+  - host-fc37
+
+# Placeholder -- guest VM templates to build go here.
+templates: []
+
+# Placeholder -- minimal component set to get `qb` itself runnable;
+# a real ISO needs far more (kernel, core-agent-linux, per-template
+# builder-rpm/builder-debian, grub2, iso, ...). Extend once the target
+# release/templates are specified rather than guessing the full list
+# now.
+components:
+  - builder-rpm
+  - builder-debian
+  - iso

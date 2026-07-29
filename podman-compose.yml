@@ -1,0 +1,20 @@
+# Not a long-running stack -- `builder` is meant to be invoked
+# per-command (`podman-compose run --rm builder -c builder.yml ...`),
+# not brought up with `up -d`. See README.md for actual usage.
+services:
+  builder:
+    build:
+      context: build-container
+    container_name: dom0-images-builder
+    environment:
+      # qubes-builderv2's own per-component executor (:executor: in
+      # builder.yml) needs a podman API to talk to for its nested,
+      # per-component sandboxed builds -- this container doesn't run
+      # its own podman daemon, it talks to the host's via the mounted
+      # socket below, same pattern as gitea-tor-forge's mirror-agent.
+      CONTAINER_HOST: unix:///run/podman/podman.sock
+    volumes:
+      - ./builder.yml:/builder/qubes-builderv2/builder.yml:ro
+      - ./artifacts:/builder/artifacts
+      - ./cache:/builder/cache
+      - ${PODMAN_SOCKET:-/run/user/1000/podman/podman.sock}:/run/podman/podman.sock

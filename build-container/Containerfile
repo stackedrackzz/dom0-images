@@ -1,0 +1,46 @@
+# Outer container that runs qubes-builderv2 itself (`qb`). Its own
+# per-component builds are further sandboxed via the podman executor
+# configured in ../builder.yml -- this container needs a podman socket
+# available to it (mounted in by podman-compose.yml) to spawn those
+# nested builds; it does not run its own podman daemon.
+#
+# podman itself is NOT installed here on purpose -- it's a host-level
+# requirement (see packaging/dom0-images.spec's `Requires: podman`),
+# not something this image bundles. This container talks to the
+# HOST's podman exclusively through the mounted socket
+# (CONTAINER_HOST in podman-compose.yml); if `qb`'s podman executor
+# turns out to shell out to a local `podman` binary rather than using
+# podman-py/the REST API directly, that binary needs to be bind-mounted
+# in from the host too (not dnf-installed here) -- unverified either
+# way without a real build to test against.
+#
+# Package list is a best-effort reconstruction of qubes-builderv2's
+# own documented dependencies, NOT verified against a live checkout
+# (no internet access from the environment this was written in to
+# confirm against https://github.com/QubesOS/qubes-builderv2's actual
+# INSTALL/requirements). Expect to add packages the first time a real
+# build actually fails on a missing tool.
+FROM registry.fedoraproject.org/fedora:39
+
+RUN dnf -y install --setopt=install_weak_deps=False \
+        git \
+        python3 \
+        python3-pip \
+        python3-pyyaml \
+        python3-lxml \
+        rpm-build \
+        rpmdevtools \
+        mock \
+        createrepo_c \
+        debootstrap \
+        dpkg-dev \
+        gnupg2 \
+        make \
+        which \
+    && dnf clean all
+
+RUN git clone --branch main https://github.com/QubesOS/qubes-builderv2.git /builder/qubes-builderv2
+
+WORKDIR /builder/qubes-builderv2
+
+ENTRYPOINT ["/builder/qubes-builderv2/qb"]
